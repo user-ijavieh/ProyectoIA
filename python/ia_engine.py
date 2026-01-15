@@ -5,7 +5,7 @@ from transformers import pipeline
 classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
 
 # Define aquí los productos reales de tu carta
-MENU_PRODUCTOS = ["pizza", "hamburguesa", "tacos", "ensalada", "zumo", "pasta", "pan", "perrito caliente", "hot dog", "refresco", "coca cola"]
+MENU_PRODUCTOS = ["pizza", "hamburguesa", "tacos", "ensalada", "zumo", "pasta", "pan"]
 
 def extraer_multiples_pedidos(frase_usuario):
     """Descompone una frase natural en una lista de productos, cantidades y notas."""
