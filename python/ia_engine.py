@@ -1,52 +1,55 @@
 import re
 from transformers import pipeline
 
-# Cargamos el modelo de clasificación Zero-Shot (especializado en entender etiquetas sin entrenamiento previo)
+# Modelo de clasificación Zero-Shot
 classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
 
-# Define aquí los productos reales de tu carta
-MENU_PRODUCTOS = ["pizza", "hamburguesa", "tacos", "ensalada", "zumo", "pasta", "pan"]
+# Menú extendido unificado
+MENU_PRODUCTOS = [
+    "pizza", "hamburguesa", "tacos", "ensalada", "zumo", 
+    "pasta", "pan", "panes", "perrito caliente", "hot dog", "refresco", "coca cola"
+]
 
 def extraer_multiples_pedidos(frase_usuario):
     """Descompone una frase natural en una lista de productos, cantidades y notas."""
-    # Normalizamos un poco el texto
+    # 1. Normalización de números escritos como palabras
+    mapa_numeros = {
+        "una": "1", "un": "1", "uno": "1",
+        "dos": "2", "tres": "3", "cuatro": "4", "cinco": "5"
+    }
+    
     texto = frase_usuario.lower().replace(" y ", ", ")
     
-    # Segmentación: Buscamos patrones que empiecen por un número
-    # Esto separa "2 pizzas y 1 zumo" en ["2 pizzas ", " 1 zumo"]
-    segmentos = re.findall(r'(\d+[\s\w\sñáéíóú]+)(?:,|$)', texto)
+    # Reemplazamos palabras por dígitos para que el motor las entienda
+    for palabra, numero in mapa_numeros.items():
+        texto = re.sub(rf'\b{palabra}\b', numero, texto)
     
-    if not segmentos:
-        segmentos = [texto] # Si no hay números, procesamos la frase completa
-
+    # 2. Segmentación: Dividimos por comas para obtener cada producto por separado
+    segmentos = [s.strip() for s in texto.split(",") if s.strip()]
+    
     lista_pedidos = []
-
     for seg in segmentos:
-        # 1. Extraer cantidad
+        # Extraer cantidad (ahora que todo son dígitos es más fácil)
         cant_match = re.search(r'\d+', seg)
         cantidad = int(cant_match.group(0)) if cant_match else 1
         
-        # 2. Clasificar el producto según el menú
+        # 3. Clasificación del producto
         res = classifier(seg, candidate_labels=MENU_PRODUCTOS)
-        # Solo aceptamos el producto si la IA está muy segura (confianza > 0.4)
         producto_ia = res['labels'][0] if res['scores'][0] > 0.4 else "Especial/Otro"
         
-        # 3. Limpiar el resto del texto para obtener la nota
-        # Quitamos la cantidad y el nombre del producto del texto original
-        nota = seg.replace(str(cantidad), "").replace(producto_ia, "")
+        # 4. Limpieza profunda de la nota
+        # Eliminamos la cantidad y el producto detectado para ver qué sobra
+        nota = seg.replace(str(cantidad), "").replace(producto_ia.lower(), "").strip()
         
-        # Limpieza de conectores y palabras comunes
-        palabras_limpieza = ["quiero", "ponme", "un", "una", " de ", " con ", " por favor"]
+        # Quitamos conectores y restos de plurales (como la 's' final de 'pizzas')
+        nota = re.sub(r'\bs\b', '', nota) # Quita 's' sueltas
+        palabras_limpieza = ["quiero", "ponme", " de ", " con ", " por favor"]
         for p in palabras_limpieza:
             nota = nota.replace(p, " ")
         
-        nota = nota.strip().capitalize()
-        if not nota: nota = "Sin notas"
-
         lista_pedidos.append({
             "producto": producto_ia.capitalize(),
             "cantidad": cantidad,
-            "nota": nota
+            "nota": nota.strip().capitalize() if len(nota.strip()) > 1 else "Sin notas"
         })
-    
     return lista_pedidos
