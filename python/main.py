@@ -3,64 +3,50 @@ import uuid
 from ia_engine import extraer_multiples_pedidos
 from database import guardar_pedido
 
-# Variable global para mantener el pedido en memoria antes de confirmar
 pedido_pendiente = []
 
 def flujo_chatbot(mensaje, historial):
     global pedido_pendiente
     try:
         mensaje_min = mensaje.lower()
-
-        # LÓGICA DE CONFIRMACIÓN
         palabras_confirmacion = ["si", "sí", "vale", "confirmar", "correcto", "perfecto"]
+        
+        # MEJORA: Tokenización para evitar falsos positivos con palabras como "sin"
         mensaje_tokenizado = mensaje_min.split()
+        
         if any(palabra in mensaje_tokenizado for palabra in palabras_confirmacion):
             if pedido_pendiente:
-                # GENERAMOS UN ID DE TICKET ÚNICO
                 ticket_id = str(uuid.uuid4())[:8].upper()
                 
+                # Verificamos que todos los items se guarden correctamente
                 guardado_ok = True
                 for item in pedido_pendiente:
                     if not guardar_pedido(ticket_id, item['producto'], item['cantidad'], item['nota']):
                         guardado_ok = False
                 
                 if guardado_ok:
-                    resumen_final = f"✅ **¡Pedido enviado a cocina!**\n\n**Ticket ID:** `{ticket_id}`\n"
+                    resumen = f"✅ **¡Pedido enviado!** (Ticket: `{ticket_id}`)\n"
                     for item in pedido_pendiente:
-                        resumen_final += f"- {item['cantidad']}x {item['producto']}\n"
-                else:
-                    resumen_final = "❌ Hubo un error al guardar el pedido en la base de datos. Inténtalo de nuevo."
-                
-                pedido_pendiente = [] # Limpiamos la memoria
-                return resumen_final
-            else:
-                return "No tienes ningún pedido pendiente. ¿Qué te gustaría tomar?"
-
-        # LÓGICA DE NUEVO PEDIDO
+                        resumen += f"- {item['cantidad']}x {item['producto']}\n"
+                    pedido_pendiente = []
+                    return resumen
+                return "❌ Error al guardar en la base de datos."
+            return "No hay pedidos pendientes."
+        
         else:
-            lista_extraida = extraer_multiples_pedidos(mensaje)
-            pedido_pendiente = lista_extraida
-            
-            respuesta = "📋 **He anotado tu comanda:**\n\n"
-            for i, item in enumerate(lista_extraida, 1):
-                respuesta += f"{i}. **{item['cantidad']}** {item['producto']} — *({item['nota']})*\n"
-            
-            respuesta += "\n¿Es correcto? (Responde **'Sí'** para confirmar)"
-            return respuesta
+            pedido_pendiente = extraer_multiples_pedidos(mensaje)
+            resp = "📋 **He anotado:**\n\n"
+            for i, item in enumerate(pedido_pendiente, 1):
+                resp += f"{i}. **{item['cantidad']}** {item['producto']} ({item['nota']})\n"
+            return resp + "\n¿Es correcto? (Responde 'Sí')"
             
     except Exception as e:
-        import traceback
-        return f"⚠️ **Error del sistema:**\n\n`{str(e)}`\n\n```\n{traceback.format_exc()}\n```"
+        return f"⚠️ **Error:** {str(e)}"
 
-# Corregimos el error del tema usando gr.Blocks
+# Interfaz Gradio
 with gr.Blocks(theme=gr.themes.Soft()) as demo:
     gr.Markdown("# 🍕 GastroIA Assistant")
-    gr.Markdown("Haz tu pedido de forma natural. Ejemplo: 'Quiero 2 pizzas poco hechas y un zumo'.")
-    
-    gr.ChatInterface(
-        fn=flujo_chatbot,
-        examples=["2 hamburguesas muy hechas y una ensalada", "Quiero 3 pizzas carbonara", "Ponme 5 tacos sin picante"]
-    )
+    gr.ChatInterface(fn=flujo_chatbot)
 
 if __name__ == "__main__":
     demo.launch()
