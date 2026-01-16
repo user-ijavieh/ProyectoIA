@@ -111,7 +111,7 @@ body {
     gap: 1rem;
 }
 
-/* Ticket Card */
+/* Ticket Card Agrupado */
 .ticket-card {
     background-color: var(--card-bg);
     border-radius: 8px;
@@ -143,6 +143,15 @@ body {
     font-family: monospace;
 }
 
+/* Estilos para múltiples items */
+.ticket-items-container {
+    margin: 1rem 0;
+}
+
+.ticket-item {
+    margin-bottom: 0.8rem;
+}
+
 .ticket-product {
     font-size: 1.1rem;
     font-weight: 600;
@@ -158,8 +167,13 @@ body {
     font-size: 0.9rem;
     color: #6b7280;
     font-style: italic;
-    margin-bottom: 1rem;
     display: block;
+}
+
+.ticket-divider {
+    border: 0;
+    border-top: 1px dashed #e5e7eb;
+    margin: 0.5rem 0;
 }
 
 .ticket-actions {
@@ -186,7 +200,6 @@ body {
     background-color: var(--accent-color);
 }
 
-/* Responsive */
 @media (max-width: 768px) {
     .board-container {
         flex-direction: column;
