@@ -3,56 +3,69 @@ from mysql.connector import Error
 
 def get_db_connection():
     try:
-        connection = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            password="",
+        return mysql.connector.connect(
+            host="localhost", 
+            user="root", 
+            password="", 
             database="restaurante_db"
         )
-        return connection
-    except Error as e:
-        print(f"Error al conectar: {e}")
+    except Error as e: 
+        print(f"Error de conexión: {e}")
         return None
 
-def guardar_pedido(id_pedido, producto, cantidad, nota):
-    """Inserta un producto individual asociado a un ID de ticket único."""
+def obtener_menu_db():
+    """Obtiene la lista de productos disponibles desde la tabla menu."""
     conexion = get_db_connection()
     if conexion and conexion.is_connected():
         try:
             cursor = conexion.cursor()
-            sql = "INSERT INTO pedidos (id_pedido, producto, cantidad, nota) VALUES (%s, %s, %s, %s)"
-            valores = (id_pedido, producto, cantidad, nota)
-            cursor.execute(sql, valores)
+            cursor.execute("SELECT nombre_producto FROM menu WHERE disponible = 1")
+            # Convertimos a minúsculas para un mejor matching con la IA
+            return [row[0].lower() for row in cursor.fetchall()]
+        finally: 
+            conexion.close()
+    return []
+
+def obtener_precio_producto(nombre):
+    """Busca el precio de un producto específico en la tabla menu."""
+    conexion = get_db_connection()
+    if conexion and conexion.is_connected():
+        try:
+            cursor = conexion.cursor()
+            cursor.execute("SELECT precio FROM menu WHERE nombre_producto = %s", (nombre.lower(),))
+            res = cursor.fetchone()
+            return float(res[0]) if res else 0.0
+        finally: 
+            conexion.close()
+    return 0.0
+
+def guardar_pedido(id_pedido, producto, cantidad, nota, precio_unitario):
+    """Guarda el pedido incluyendo el precio unitario."""
+    conexion = get_db_connection()
+    if conexion and conexion.is_connected():
+        try:
+            cursor = conexion.cursor()
+            # SQL actualizada para incluir precio_unitario
+            sql = "INSERT INTO pedidos (id_pedido, producto, cantidad, nota, precio_unitario) VALUES (%s, %s, %s, %s, %s)"
+            cursor.execute(sql, (id_pedido, producto, cantidad, nota, precio_unitario))
             conexion.commit()
             return True
-        except Error as e:
-            print(f"Error insertando pedido: {e}")
-            return False
-        finally:
+        finally: 
             conexion.close()
     return False
 
 def obtener_estado_pedido(id_pedido):
-    """Devuelve el estado y los detalles de un pedido dado su ID."""
+    """Consulta el estado de un ticket."""
     conexion = get_db_connection()
     if conexion and conexion.is_connected():
         try:
             cursor = conexion.cursor(dictionary=True)
-            # Buscamos cualquier item con ese ticket_id para ver el estado general
-            # Asumimos que todos los items del mismo pedido cambian de estado juntos (por el update agrupado)
             sql = "SELECT estado, producto, cantidad FROM pedidos WHERE id_pedido = %s"
             cursor.execute(sql, (id_pedido,))
             resultados = cursor.fetchall()
-            
             if resultados:
-                # Retornamos el estado del primer item (deberían ser iguales) y la lista de items
-                estado_general = resultados[0]['estado']
-                items = [{"producto": r['producto'], "cantidad": r['cantidad']} for r in resultados]
-                return {"estado": estado_general, "items": items}
+                return {"estado": resultados[0]['estado'], "items": resultados}
             return None
-        except Error as e:
-            print(f"Error consultando pedido: {e}")
-            return None
-        finally:
+        finally: 
             conexion.close()
     return None

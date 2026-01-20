@@ -4,7 +4,7 @@
     --card-bg: #ffffff;
     --primary-color: #6366f1;
     --accent-color: #4f46e5;
-
+    
     /* Column Headers */
     --col-pendiente: #f59e0b;
     --col-preparacion: #3b82f6;
@@ -56,24 +56,6 @@ body {
     color: var(--primary-color);
 }
 
-.history-link {
-    text-decoration: none;
-    color: var(--text-color);
-    font-weight: 600;
-    margin-right: 15px;
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    transition: background-color 0.2s;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.history-link:hover {
-    background-color: #e5e7eb;
-    color: var(--primary-color);
-}
-
 /* Board Layout */
 .board-container {
     flex: 1;
@@ -102,17 +84,9 @@ body {
     align-items: center;
 }
 
-.header-pendiente {
-    background-color: var(--col-pendiente);
-}
-
-.header-preparacion {
-    background-color: var(--col-preparacion);
-}
-
-.header-completado {
-    background-color: var(--col-completado);
-}
+.header-pendiente { background-color: var(--col-pendiente); }
+.header-preparacion { background-color: var(--col-preparacion); }
+.header-completado { background-color: var(--col-completado); }
 
 .column-header h2 {
     margin: 0;
@@ -152,18 +126,9 @@ body {
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
-.ticket-card.status-pendiente {
-    border-left-color: var(--col-pendiente);
-}
-
-.ticket-card.status-preparacion {
-    border-left-color: var(--col-preparacion);
-}
-
-.ticket-card.status-completado {
-    border-left-color: var(--col-completado);
-    opacity: 0.7;
-}
+.ticket-card.status-pendiente { border-left-color: var(--col-pendiente); }
+.ticket-card.status-preparacion { border-left-color: var(--col-preparacion); }
+.ticket-card.status-completado { border-left-color: var(--col-completado); opacity: 0.7; }
 
 .ticket-header {
     display: flex;
@@ -231,16 +196,7 @@ body {
 .btn-move-next {
     background-color: var(--primary-color);
 }
-
 .btn-move-next:hover {
-    background-color: var(--accent-color);
-}
-
-.btn-archive {
-    background-color: var(--primary-color);
-}
-
-.btn-archive:hover {
     background-color: var(--accent-color);
 }
 
@@ -248,8 +204,90 @@ body {
     .board-container {
         flex-direction: column;
     }
-
     .board-column {
         min-height: 300px;
     }
+}
+
+/* --- ESTILOS ADICIONALES DEL TICKET INTERNO --- */
+
+.ticket-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+    color: #4b5563;
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+    border-bottom: 2px dashed #e5e7eb; /* Línea discontinua más gruesa */
+}
+
+.ticket-id {
+    font-family: monospace;
+    font-size: 1.1rem;
+}
+
+.btn-delete {
+    background: none;
+    border: none;
+    color: #ef4444; /* Rojo para la basura */
+    cursor: pointer;
+    font-size: 1.1rem;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background 0.2s, color 0.2s;
+}
+
+.btn-delete:hover {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.ticket-items {
+    margin-bottom: 15px;
+}
+
+/* ESTILOS DEL FOOTER (Precio y Botón de Acción) */
+.ticket-footer {
+    display: flex;
+    justify-content: space-between; /* Precio a la izquierda, botón a la derecha */
+    align-items: center;
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid #eee;
+}
+
+.ticket-footer .price {
+    font-weight: bold;
+    color: #059669;
+    font-size: 1.1rem;
+}
+
+.price {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #059669;
+}
+
+
+.action-btn {
+    width: auto; 
+    padding: 8px 16px;
+    background-color: #6366f1; 
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+    box-shadow: 0 2px 4px rgba(99, 102, 241, 0.2);
+}
+
+.action-btn:hover {
+    background-color: #4f46e5; 
+    transform: translateY(-1px); 
+}
+
+.action-btn:active {
+    transform: translateY(0);
 }
