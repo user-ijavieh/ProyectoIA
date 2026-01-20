@@ -1,4 +1,4 @@
-const API_URL = 'php/api_pedidos.php';
+const API_URL = '../../backend/api/api_pedidos.php';
 
 document.addEventListener('DOMContentLoaded', () => {
     fetchOrders();

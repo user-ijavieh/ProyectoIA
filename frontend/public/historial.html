@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <!-- CSS -->
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="../assets/css/style.css">
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -60,7 +60,7 @@
             <i class="fa-solid fa-clock-rotate-left"></i> Historial de Pedidos
         </div>
         <div class="header-actions">
-            <a href="tablero.html" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Volver al Tablero</a>
+            <a href="index.html" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Volver al Tablero</a>
         </div>
     </header>
 
@@ -84,7 +84,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
             try {
-                const response = await fetch('php/api_pedidos.php?mode=historial');
+                const response = await fetch('../../backend/api/api_pedidos.php?mode=historial');
                 const orders = await response.json();
                 renderHistory(orders);
             } catch (error) {
