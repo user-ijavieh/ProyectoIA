@@ -4,7 +4,7 @@
     --card-bg: #ffffff;
     --primary-color: #6366f1;
     --accent-color: #4f46e5;
-    
+
     /* Column Headers */
     --col-pendiente: #f59e0b;
     --col-preparacion: #3b82f6;
@@ -56,6 +56,24 @@ body {
     color: var(--primary-color);
 }
 
+.history-link {
+    text-decoration: none;
+    color: var(--text-color);
+    font-weight: 600;
+    margin-right: 15px;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    transition: background-color 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.history-link:hover {
+    background-color: #e5e7eb;
+    color: var(--primary-color);
+}
+
 /* Board Layout */
 .board-container {
     flex: 1;
@@ -84,9 +102,17 @@ body {
     align-items: center;
 }
 
-.header-pendiente { background-color: var(--col-pendiente); }
-.header-preparacion { background-color: var(--col-preparacion); }
-.header-completado { background-color: var(--col-completado); }
+.header-pendiente {
+    background-color: var(--col-pendiente);
+}
+
+.header-preparacion {
+    background-color: var(--col-preparacion);
+}
+
+.header-completado {
+    background-color: var(--col-completado);
+}
 
 .column-header h2 {
     margin: 0;
@@ -126,9 +152,18 @@ body {
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
-.ticket-card.status-pendiente { border-left-color: var(--col-pendiente); }
-.ticket-card.status-preparacion { border-left-color: var(--col-preparacion); }
-.ticket-card.status-completado { border-left-color: var(--col-completado); opacity: 0.7; }
+.ticket-card.status-pendiente {
+    border-left-color: var(--col-pendiente);
+}
+
+.ticket-card.status-preparacion {
+    border-left-color: var(--col-preparacion);
+}
+
+.ticket-card.status-completado {
+    border-left-color: var(--col-completado);
+    opacity: 0.7;
+}
 
 .ticket-header {
     display: flex;
@@ -196,7 +231,16 @@ body {
 .btn-move-next {
     background-color: var(--primary-color);
 }
+
 .btn-move-next:hover {
+    background-color: var(--accent-color);
+}
+
+.btn-archive {
+    background-color: var(--primary-color);
+}
+
+.btn-archive:hover {
     background-color: var(--accent-color);
 }
 
@@ -204,6 +248,7 @@ body {
     .board-container {
         flex-direction: column;
     }
+
     .board-column {
         min-height: 300px;
     }
