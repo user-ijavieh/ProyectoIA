@@ -1,6 +1,6 @@
 import gradio as gr
 import uuid
-from ia_engine import extraer_multiples_pedidos
+from ia_engine import extraer_multiples_pedidos, es_saludo_o_despedida
 from database import guardar_pedido
 
 # Variable global para mantener el pedido en memoria antes de confirmar
@@ -38,7 +38,21 @@ def flujo_chatbot(mensaje, historial):
 
         # LÓGICA DE NUEVO PEDIDO
         else:
+            # 1. Chequeamos si es un saludo/despedida
+            from ia_engine import es_saludo_o_despedida # Import local or top level
+            tipo_social = es_saludo_o_despedida(mensaje)
+            
+            if tipo_social == "saludo":
+                return "👋 ¡Hola! Soy tu asistente virtual de GastroIA. ¿Qué te gustaría pedir hoy? (Ej: '2 pizzas y una coca cola')"
+            elif tipo_social == "despedida":
+                return "👋 ¡Hasta luego! Gracias por usar GastroIA. Vuelve pronto."
+            
+            # 2. Intentamos extraer pedido
             lista_extraida = extraer_multiples_pedidos(mensaje)
+            
+            if not lista_extraida:
+                return "🤔 No he entendido tu pedido. Por favor, indícame la cantidad y el producto. Ej: 'Quiero **2 hamburguesas**'."
+
             pedido_pendiente = lista_extraida
             
             respuesta = "📋 **He anotado tu comanda:**\n\n"
@@ -63,4 +77,4 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
     )
 
 if __name__ == "__main__":
-    demo.launch()
+    demo.launch(share=True)
