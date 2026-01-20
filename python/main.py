@@ -1,14 +1,35 @@
 import gradio as gr
 import uuid
-from ia_engine import extraer_multiples_pedidos, es_saludo_o_despedida
+from ia_engine import extraer_multiples_pedidos, es_saludo_o_despedida, procesar_imagen_pedido
 from database import guardar_pedido
 
 pedido_pendiente = []
 
 def flujo_chatbot(mensaje, historial):
     global pedido_pendiente
+    
+    # Soporte multimodal: 'mensaje' puede ser un dict
+    texto_usuario = ""
+    archivos = []
+    
+    if isinstance(mensaje, dict):
+        texto_usuario = mensaje.get("text", "")
+        archivos = mensaje.get("files", [])
+    else:
+        texto_usuario = str(mensaje)
+    
+    # Procesar imagen si existe
+    if archivos:
+        # Se asume que archivos es una lista de paths o URLs
+        try:
+            texto_ocr = procesar_imagen_pedido(archivos[0])
+            if texto_ocr:
+                texto_usuario += " " + texto_ocr
+        except Exception as e:
+            return f"⚠️ Error al procesar imagen: {str(e)}"
+
     try:
-        mensaje_min = mensaje.lower()
+        mensaje_min = texto_usuario.lower()
         palabras_confirmacion = ["si", "sí", "vale", "confirmar", "correcto", "perfecto"]
         
         # MEJORA: Tokenización para evitar falsos positivos con palabras como "sin"
@@ -37,7 +58,7 @@ def flujo_chatbot(mensaje, historial):
         # --- BLOQUE B: INTERPRETACIÓN (Aquí estaba el conflicto) ---
         else:
             # 1. Chequeamos si es un saludo/despedida
-            tipo_social = es_saludo_o_despedida(mensaje)
+            tipo_social = es_saludo_o_despedida(texto_usuario)
             
             if tipo_social == "saludo":
                 return "👋 ¡Hola! Soy tu asistente virtual de GastroIA. ¿Qué te gustaría pedir hoy? (Ej: '2 pizzas y una coca cola')"
@@ -45,7 +66,7 @@ def flujo_chatbot(mensaje, historial):
                 return "👋 ¡Hasta luego! Gracias por usar GastroIA. Vuelve pronto."
             
             # 2. Intentamos extraer pedido
-            lista_extraida = extraer_multiples_pedidos(mensaje)
+            lista_extraida = extraer_multiples_pedidos(texto_usuario)
             
             # Si la IA no encontró ningún producto válido
             if not lista_extraida:
@@ -67,7 +88,8 @@ def flujo_chatbot(mensaje, historial):
 # Interfaz Gradio
 with gr.Blocks(theme=gr.themes.Soft()) as demo:
     gr.Markdown("# 🍕 GastroIA Assistant")
-    gr.ChatInterface(fn=flujo_chatbot)
+    # Multimodal: type="messages" es el nuevo estándar
+    gr.ChatInterface(fn=flujo_chatbot, multimodal=True)
 
 if __name__ == "__main__":
     demo.launch(share=True)
