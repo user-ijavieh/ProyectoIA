@@ -1,5 +1,6 @@
 import re
 from transformers import pipeline
+import difflib # Importante: Necesario para la corrección de errores tipográficos (Fuzzy)
 
 # Modelo de clasificación Zero-Shot
 classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
@@ -25,7 +26,6 @@ except Exception as e:
     reader_detector = None
     print(f"⚠️ Error al cargar librerías o modelos OCR: {e}")
 
-# ... (código intermedio sin cambios)
 
 def procesar_imagen_pedido(imagen_path):
     """
@@ -44,24 +44,14 @@ def procesar_imagen_pedido(imagen_path):
             return ""
             
         # Detección de texto con EasyOCR
-        # devolvemos coordenadas de las cajas
         cajas = reader_detector.detect(img_cv)
         
-        # 'cajas' tiene formato [[box1, box2...]] o [boxes, conf] dependiendo de la versión
-        # Normalmente detect devuelve (horizontal_list, free_list). Usamos horizontal_list.
         if not cajas or not cajas[0]:
              print("DEBUG: No se detectaron cajas de texto.")
              return ""
              
         # Obtenemos la lista de bounding lines
         bounding_boxes = cajas[0] 
-        
-        # Ordenamos las cajas de arriba a abajo (por la coordenada Y min)
-        # box = [x_min, x_max, y_min, y_max] en easyocr detect? 
-        # EasyOCR detect returns [x_min, x_max, y_min, y_max] for raw detection?
-        # Actually easyocr.Reader.detect returns tuples: (horizontal_list, free_list)
-        # horizontal_list elements are [x_min, x_max, y_min, y_max]
-        
         bounding_boxes.sort(key=lambda x: x[2]) # Ordenar por Y_min
         
         texto_total = []
@@ -74,7 +64,7 @@ def procesar_imagen_pedido(imagen_path):
         for box in bounding_boxes:
             x_min, x_max, y_min, y_max = box
             
-            # Dar un pequeño margen (padding) al recorte para no cortar letras altas
+            # Padding
             padding = 5
             x_min = max(0, x_min - padding)
             y_min = max(0, y_min - padding)
@@ -102,17 +92,14 @@ def procesar_imagen_pedido(imagen_path):
             match_nuevo = re.match(r'^(\d+|un\b|una\b|[-*])', linea, re.IGNORECASE)
             
             if match_nuevo:
-                # Nuevo ítem -> Coma previa si no es el primero
                 if texto_total:
                     linea = ", " + linea
             else:
-                # Continuación -> Espacio previo
                 linea = " " + linea
                 
             texto_total.append(linea)
             
         texto_final = "".join(texto_total).strip()
-        # Limpiar comas duplicadas o al inicio
         texto_final = texto_final.lstrip(", ")
         
         print(f"DEBUG TrOCR Final: {texto_final}")
@@ -125,13 +112,11 @@ def procesar_imagen_pedido(imagen_path):
         return ""
 
 
+# --- BLOQUE 1: Configuración y Helpers ---
 
-# --- BLOQUE 1: Configuración y Helpers (Preservado de HEAD) ---
-
-# Define aquí los productos reales de tu carta
 MENU_PRODUCTOS = [
     "pizza", "hamburguesa", "tacos", "ensalada", "zumo", 
-    "pasta", "pan", "perrito caliente", "hot dog", "refresco", "coca cola"
+    "pasta", "pan", "panes", "perrito caliente", "hot dog", "refresco", "coca cola"
 ]
 
 def es_saludo_o_despedida(texto):
@@ -141,7 +126,6 @@ def es_saludo_o_despedida(texto):
     saludos = ["hola", "buenas", "buenos dias", "buenos días", "buenas tardes", "buenas noches", "hey", "qué tal", "que tal"]
     despedidas = ["adios", "adiós", "chao", "hasta luego", "nos vemos", "bye", "hasta pronto", "gracias"]
     
-    # Si el texto es EXACTAMENTE un saludo/despedida o empieza por uno muy común
     for s in saludos:
         if texto == s or texto.startswith(s + " "):
             return "saludo"
@@ -152,52 +136,60 @@ def es_saludo_o_despedida(texto):
             
     return None
 
-# --- BLOQUE 2: Lógica Principal (Fusión priorizando la robustez de HEAD) ---
+# --- BLOQUE 2: Lógica Principal (FUSIÓN COMPLETA) ---
 
 def extraer_multiples_pedidos(frase_usuario):
     """Descompone una frase natural en una lista de productos, cantidades y notas."""
+    # 1. Normalización de números escritos como palabras
+    mapa_numeros = {
+        "una": "1", "un": "1", "uno": "1",
+        "dos": "2", "tres": "3", "cuatro": "4", "cinco": "5"
+    }
+    
     texto = frase_usuario.lower().replace(" y ", ", ")
     
-    # TRUCO: Convertimos palabras de unidad textuales a números para que el regex los pille
-    # "dame una pizza" -> "dame 1 pizza"
+    # Convertimos palabras de unidad textuales a números
     texto = re.sub(r'\b(un|una)\b', '1', texto)
     
     # Segmentación: Buscamos patrones que empiecen por un número
-    # Esto separa "2 pizzas y 1 zumo" en ["2 pizzas ", " 1 zumo"]
     segmentos = re.findall(r'(\d+[\s\w\sñáéíóú]+)(?:,|$)', texto)
     
     if not segmentos:
-        # Si no hay números, intentamos ver si menciona productos directamente
         segmentos = [texto] 
 
+    # Reemplazamos palabras por dígitos
+    for palabra, numero in mapa_numeros.items():
+        texto = re.sub(rf'\b{palabra}\b', numero, texto)
+    
+    # 2. Segmentación final por comas
+    segmentos = [s.strip() for s in texto.split(",") if s.strip()]
+    
     lista_pedidos = []
     
     for seg in segmentos:
-        # Extraer cantidad numérica
+        # Extraer cantidad
         cant_match = re.search(r'\d+', seg)
         cantidad = int(cant_match.group(0)) if cant_match else 1
         
-        # Validar que el segmento tenga contenido real antes de llamar a la IA
+        # --- LÓGICA FUSIONADA ---
+        
+        # A) Validar contenido real (De HEAD)
         if not seg.strip() or not re.search(r'[a-zA-Z]', seg):
             continue
 
-        # Clasificar producto con IA
+        # B) Clasificación con IA (Común)
         res = classifier(seg, candidate_labels=MENU_PRODUCTOS)
-        
-        # Solo aceptamos el producto si la IA está razonablemente segura
+        producto_ia = None
+
+        # C) Validación de Confianza + Fuzzy Matching (De HEAD - Más robusto)
         if res['scores'][0] > 0.4:
             producto_ia = res['labels'][0]
         else:
-             # INTENTO DE RECUPERACIÓN: Fuzzy matching
-             # Si la confianza de la IA es baja (probablemente por un typo grave tipo "Pjxca"),
-             # intentamos buscar la palabra más parecida en el menú.
-             import difflib
-             # Tokenizamos el segmento para buscar palabra por palabra
+             # Recuperación ante typos graves
              palabras = seg.split()
              encontrado_fuzzy = None
              
              for palabra in palabras:
-                 # Limpiar palabra de basura
                  p_limpia = re.sub(r'[^a-zA-Zñáéíóú]', '', palabra)
                  matches = difflib.get_close_matches(p_limpia, MENU_PRODUCTOS, n=1, cutoff=0.6)
                  if matches:
@@ -207,26 +199,23 @@ def extraer_multiples_pedidos(frase_usuario):
              if encontrado_fuzzy:
                  producto_ia = encontrado_fuzzy
              else:
-                 # Si ni la IA ni el fuzzy lo encuentran, lo saltamos
+                 # Si falla IA y falla Fuzzy, ignoramos este segmento
                  continue 
         
-        # --- Limpieza de la Nota (Lógica avanzada de HEAD) ---
+        # D) Limpieza profunda de la nota (De Incoming - Mejor formato)
+        # Usamos el producto detectado para limpiar la frase original
+        nota = seg.replace(str(cantidad), "").replace(producto_ia.lower(), "").strip()
         
-        # 1. Quitamos la cantidad numérica del texto original
-        nota = seg.replace(str(cantidad), "")
+        # Quita 's' sueltas (plurales residuales)
+        nota = re.sub(r'\bs\b', '', nota) 
         
-        # 2. Quitamos el nombre del producto (y su posible plural simple 's' o 'es')
-        # Ejemplo: Si producto es 'pizza', quitamos 'pizza' y 'pizzas' del texto de la nota
-        nota = re.sub(rf'\b{producto_ia}(es|s)?\b', '', nota, flags=re.IGNORECASE)
-        
-        # 3. Limpieza de conectores y palabras comunes ("relleno")
-        palabras_limpieza = ["quiero", "ponme", " dame ", " de ", " con ", " por favor", " un ", " una "]
+        palabras_limpieza = ["quiero", "ponme", " de ", " con ", " por favor"]
         for p in palabras_limpieza:
             nota = nota.replace(p, " ")
         
-        # 4. Formateo final
+        # E) Formateo final
         nota = nota.strip().capitalize()
-        nota = nota.lstrip(".,- ") # Quitamos puntuación que haya quedado al principio
+        nota = nota.lstrip(".,- ") 
         
         if not nota: 
             nota = "Sin notas"
@@ -238,5 +227,3 @@ def extraer_multiples_pedidos(frase_usuario):
         })
         
     return lista_pedidos
-
-
