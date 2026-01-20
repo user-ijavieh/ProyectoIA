@@ -23,7 +23,15 @@ if ($checkColumn->num_rows == 0) {
 $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'GET') {
-    $sql = "SELECT * FROM pedidos ORDER BY id DESC";
+    $mode = isset($_GET['mode']) ? $_GET['mode'] : 'tablero';
+
+    if ($mode === 'historial') {
+        $sql = "SELECT * FROM pedidos WHERE estado = 'archivado' ORDER BY fecha DESC";
+    } else {
+        // Tablero: todo menos archivado
+        $sql = "SELECT * FROM pedidos WHERE estado != 'archivado' ORDER BY id DESC";
+    }
+    
     $result = $conn->query($sql);
 
     $pedidos = [];
@@ -44,9 +52,9 @@ if ($method === 'GET') {
 
         // Lógica de actualización agrupada
         if ($producto === 'ALL') {
-            $sql = "UPDATE pedidos SET estado='$estado' WHERE id_pedido='$id_pedido'";
+            $sql = "UPDATE pedidos SET estado='$estado', fecha=NOW() WHERE id_pedido='$id_pedido'";
         } else {
-            $sql = "UPDATE pedidos SET estado='$estado' WHERE id_pedido='$id_pedido' AND producto='$producto'";
+            $sql = "UPDATE pedidos SET estado='$estado', fecha=NOW() WHERE id_pedido='$id_pedido' AND producto='$producto'";
         }
         
         if ($conn->query($sql) === TRUE) {

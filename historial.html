@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GastroIA - Historial de Pedidos</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .history-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            color: #333;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="main-header">
+        <div class="logo">
+            <i class="fa-solid fa-clock-rotate-left"></i> Historial de Pedidos
+        </div>
+        <div class="header-actions">
+            <a href="tablero.html" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Volver al Tablero</a>
+        </div>
+    </header>
+
+    <main class="history-container">
+        <h1>Pedidos Archivados</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID Pedido</th>
+                    <th>Fecha/Hora Archivo</th>
+                    <th>Productos</th>
+                    <th>Notas</th>
+                </tr>
+            </thead>
+            <tbody id="history-table-body">
+                <!-- Rows will be injected here -->
+            </tbody>
+        </table>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const response = await fetch('php/api_pedidos.php?mode=historial');
+                const orders = await response.json();
+                renderHistory(orders);
+            } catch (error) {
+                console.error('Error cargando historial:', error);
+            }
+        });
+
+        function renderHistory(orders) {
+            const tbody = document.getElementById('history-table-body');
+
+            // Agrupar igual que en el tablero
+            const groupedOrders = {};
+            orders.forEach(order => {
+                if (!groupedOrders[order.id_pedido]) {
+                    groupedOrders[order.id_pedido] = {
+                        id_pedido: order.id_pedido,
+                        fecha: order.fecha,
+                        items: []
+                    };
+                }
+                groupedOrders[order.id_pedido].items.push(order);
+            });
+
+            Object.values(groupedOrders).forEach(ticket => {
+                const tr = document.createElement('tr');
+
+                const productosHtml = ticket.items.map(item =>
+                    `<div><b>${item.cantidad}x</b> ${item.producto}</div>`
+                ).join('');
+
+                const notasHtml = ticket.items.map(item =>
+                    item.nota && item.nota !== 'Sin notas' ? `<div>- ${item.nota}</div>` : ''
+                ).join('');
+
+                tr.innerHTML = `
+                    <td>#${ticket.id_pedido}</td>
+                    <td>${ticket.fecha || '--'}</td>
+                    <td>${productosHtml}</td>
+                    <td>${notasHtml || '<i>Sin notas</i>'}</td>
+                 `;
+                tbody.appendChild(tr);
+            });
+        }
+    </script>
+</body>
+
+</html>

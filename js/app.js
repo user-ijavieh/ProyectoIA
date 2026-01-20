@@ -44,6 +44,7 @@ function renderBoard(orders) {
             groupedOrders[order.id_pedido] = {
                 id_pedido: order.id_pedido,
                 estado: order.estado ? order.estado.toLowerCase() : 'pendiente',
+                fecha: order.fecha,
                 items: []
             };
         }
@@ -76,15 +77,26 @@ function createTicketCard(ticket) {
     const nextStatusMap = {
         'pendiente': 'preparacion',
         'preparacion': 'completado',
-        'completado': null
+        'completado': 'archivado' // Nuevo flujo
     };
 
     const nextStatus = nextStatusMap[ticket.estado];
     let actionBtnHtml = '';
 
     if (nextStatus) {
-        const btnText = nextStatus === 'preparacion' ? 'Cocinar <i class="fa-solid fa-fire"></i>' : 'Completar <i class="fa-solid fa-check"></i>';
-        actionBtnHtml = `<button class="action-btn btn-move-next" onclick="updateTicketStatus('${ticket.id_pedido}', '${nextStatus}')">${btnText}</button>`;
+        let btnText = '';
+        let btnClass = 'btn-move-next';
+
+        if (nextStatus === 'preparacion') {
+            btnText = 'Cocinar <i class="fa-solid fa-fire"></i>';
+        } else if (nextStatus === 'completado') {
+            btnText = 'Completar <i class="fa-solid fa-check"></i>';
+        } else if (nextStatus === 'archivado') {
+            btnText = 'Archivar <i class="fa-solid fa-box-archive"></i>';
+            btnClass = 'btn-archive'; // Clase diferente para estilo
+        }
+
+        actionBtnHtml = `<button class="action-btn ${btnClass}" onclick="updateTicketStatus('${ticket.id_pedido}', '${nextStatus}')">${btnText}</button>`;
     }
 
     // Generar lista de productos dentro del ticket
@@ -100,7 +112,7 @@ function createTicketCard(ticket) {
     div.innerHTML = `
         <div class="ticket-header">
             <span class="ticket-id">#${ticket.id_pedido}</span>
-            <span class="ticket-time">${new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
+            <span class="ticket-time">${formatTicketTime(ticket.fecha)}</span>
         </div>
         <div class="ticket-items-container">
             ${itemsHtml}
@@ -133,4 +145,24 @@ async function updateTicketStatus(idPedido, newStatus) {
     } catch (error) {
         console.error('Error en updateTicketStatus:', error);
     }
+}
+
+function formatTicketTime(dateString) {
+    if (!dateString) return '--:--';
+    // Asumimos formato "YYYY-MM-DD HH:MM:SS" de MySQL
+    const parts = dateString.split(' ');
+
+    if (parts.length > 1) {
+        // parts[0] es YYYY-MM-DD
+        // parts[1] es HH:MM:SS
+        const dateParts = parts[0].split('-');
+        const timePart = parts[1].substring(0, 5); // HH:MM
+
+        if (dateParts.length === 3) {
+            // Retornamos DD/MM HH:MM
+            return `${dateParts[2]}/${dateParts[1]} ${timePart}`;
+        }
+        return timePart;
+    }
+    return dateString;
 }

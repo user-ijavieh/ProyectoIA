@@ -62,7 +62,17 @@ def procesar_imagen_pedido(imagen_path):
         print(f"DEBUG: Detectadas {len(bounding_boxes)} líneas.")
         
         for box in bounding_boxes:
-            x_min, x_max, y_min, y_max = box
+            # Normalizar coordenadas de la caja
+            # EasyOCR detect puede devolver [x_min, x_max, y_min, y_max] O [[x1,y1], [x2,y2], [x3,y3], [x4,y4]]
+            if isinstance(box, list) and len(box) == 4 and isinstance(box[0], list):
+                # Es un polígono [[x,y]...], extraemos min/max
+                xs = [p[0] for p in box]
+                ys = [p[1] for p in box]
+                x_min, x_max = min(xs), max(xs)
+                y_min, y_max = min(ys), max(ys)
+            else:
+                # Asumimos formato simple
+                x_min, x_max, y_min, y_max = box
             
             # Padding
             padding = 5
@@ -134,6 +144,35 @@ def es_saludo_o_despedida(texto):
         if texto == d or texto.startswith(d + " "):
             return "despedida"
             
+    return None
+
+def detectar_intencion_consulta(texto):
+    """
+    Detecta si el usuario quiere consultar el estado de un pedido.
+    Retorna el ID del ticket si lo encuentra, o True si pregunta pero no da ID.
+    """
+    texto = texto.lower()
+    palabras_clave = ["estado", "como va", "qué tal", "que tal", "estatus", "situacion", "situación", "pedido", "ticket", "comanda"]
+    
+    # Regex para buscar algo que parezca un ID (ej: 7D06BF25)
+    # Al menos 6 caracteres alfanuméricos seguidos
+    match_id = re.search(r'\b([a-fA-F0-9]{8})\b', texto)
+    
+    # ESTRATEGIA:
+    # 1. Si encontramos un ID válido, asumimos que es una consulta (¡Directo!)
+    if match_id:
+        return match_id.group(1).upper()
+
+    # 2. Si no hay ID, miramos si hay palabras clave de pregunta
+    if any(p in texto for p in palabras_clave):
+        # Regex para buscar algo que parezca un ID (ej: 7D06BF25)
+        # Al menos 6 caracteres alfanuméricos seguidos/aislados
+        match_id = re.search(r'\b([a-fA-F0-9]{8})\b', texto)
+        if match_id:
+            return match_id.group(1).upper()
+            
+        return "SOLICITAR_ID" # Detectó intención pero falta el ID
+        
     return None
 
 # --- BLOQUE 2: Lógica Principal (FUSIÓN COMPLETA) ---

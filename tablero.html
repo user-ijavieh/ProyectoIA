@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,6 +14,7 @@
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
+
 <body>
 
     <header class="main-header">
@@ -20,6 +22,8 @@
             <i class="fa-solid fa-robot"></i> GastroIA Manager
         </div>
         <div class="header-actions">
+            <a href="historial.html" class="history-link" title="Ver Historial"><i
+                    class="fa-solid fa-clock-rotate-left"></i> Ver Historial</a>
             <button id="refreshBtn" class="btn-icon"><i class="fa-solid fa-rotate-right"></i></button>
         </div>
     </header>
@@ -43,7 +47,7 @@
                 <span class="count" id="count-preparacion">0</span>
             </div>
             <div class="column-content" id="list-preparacion">
-                 <!-- Tickets -->
+                <!-- Tickets -->
             </div>
         </div>
 
@@ -54,11 +58,12 @@
                 <span class="count" id="count-completado">0</span>
             </div>
             <div class="column-content" id="list-completado">
-                 <!-- Tickets -->
+                <!-- Tickets -->
             </div>
         </div>
     </main>
 
     <script src="js/app.js"></script>
 </body>
+
 </html>
