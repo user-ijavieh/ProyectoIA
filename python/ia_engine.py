@@ -9,7 +9,7 @@ classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnl
 # Define aquí los productos reales de tu carta
 MENU_PRODUCTOS = [
     "pizza", "hamburguesa", "tacos", "ensalada", "zumo", 
-    "pasta", "pan", "perrito caliente", "hot dog", "refresco", "coca cola"
+    "pasta", "pan", "panes", "perrito caliente", "hot dog", "refresco", "coca cola"
 ]
 
 def es_saludo_o_despedida(texto):
@@ -34,6 +34,12 @@ def es_saludo_o_despedida(texto):
 
 def extraer_multiples_pedidos(frase_usuario):
     """Descompone una frase natural en una lista de productos, cantidades y notas."""
+    # 1. Normalización de números escritos como palabras
+    mapa_numeros = {
+        "una": "1", "un": "1", "uno": "1",
+        "dos": "2", "tres": "3", "cuatro": "4", "cinco": "5"
+    }
+    
     texto = frase_usuario.lower().replace(" y ", ", ")
     
     # TRUCO: Convertimos palabras de unidad textuales a números para que el regex los pille
@@ -48,34 +54,32 @@ def extraer_multiples_pedidos(frase_usuario):
         # Si no hay números, intentamos ver si menciona productos directamente
         segmentos = [texto] 
 
+    # Reemplazamos palabras por dígitos para que el motor las entienda
+    for palabra, numero in mapa_numeros.items():
+        texto = re.sub(rf'\b{palabra}\b', numero, texto)
+    
+    # 2. Segmentación: Dividimos por comas para obtener cada producto por separado
+    segmentos = [s.strip() for s in texto.split(",") if s.strip()]
+    
     lista_pedidos = []
     
     for seg in segmentos:
-        # Extraer cantidad numérica
+
+        # Clasificar producto con IA
+        # Extraer cantidad (ahora que todo son dígitos es más fácil)
         cant_match = re.search(r'\d+', seg)
         cantidad = int(cant_match.group(0)) if cant_match else 1
         
-        # Clasificar producto con IA
+        # 3. Clasificación del producto
         res = classifier(seg, candidate_labels=MENU_PRODUCTOS)
         
-        # Solo aceptamos el producto si la IA está razonablemente segura
-        if res['scores'][0] > 0.4:
-            producto_ia = res['labels'][0]
-        else:
-             # Si la confianza es baja, ignoramos este segmento (evita ruido)
-             continue 
+        # 4. Limpieza profunda de la nota
+        # Eliminamos la cantidad y el producto detectado para ver qué sobra
+        nota = seg.replace(str(cantidad), "").replace(producto_ia.lower(), "").strip()
         
-        # --- Limpieza de la Nota (Lógica avanzada de HEAD) ---
-        
-        # 1. Quitamos la cantidad numérica del texto original
-        nota = seg.replace(str(cantidad), "")
-        
-        # 2. Quitamos el nombre del producto (y su posible plural simple 's' o 'es')
-        # Ejemplo: Si producto es 'pizza', quitamos 'pizza' y 'pizzas' del texto de la nota
-        nota = re.sub(rf'\b{producto_ia}(es|s)?\b', '', nota, flags=re.IGNORECASE)
-        
-        # 3. Limpieza de conectores y palabras comunes ("relleno")
-        palabras_limpieza = ["quiero", "ponme", " dame ", " de ", " con ", " por favor", " un ", " una "]
+        # Quitamos conectores y restos de plurales (como la 's' final de 'pizzas')
+        nota = re.sub(r'\bs\b', '', nota) # Quita 's' sueltas
+        palabras_limpieza = ["quiero", "ponme", " de ", " con ", " por favor"]
         for p in palabras_limpieza:
             nota = nota.replace(p, " ")
         
@@ -89,7 +93,7 @@ def extraer_multiples_pedidos(frase_usuario):
         lista_pedidos.append({
             "producto": producto_ia.capitalize(),
             "cantidad": cantidad,
-            "nota": nota
+            "nota": nota.strip().capitalize() if len(nota.strip()) > 1 else "Sin notas"
         })
         
     return lista_pedidos
