@@ -1,5 +1,10 @@
-gradio
-openai
-pytesseract
-mysql-connector-python
-pillow
+gradio>=4.0.0
+openai>=1.0.0
+pytesseract>=0.3.10
+mysql-connector-python>=8.3.0
+pillow>=10.0.0
+transformers>=4.30.0
+torch>=2.0.0
+easyocr>=1.7.0
+opencv-python>=4.8.0
+difflib
