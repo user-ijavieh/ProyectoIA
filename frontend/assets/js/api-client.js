@@ -2,7 +2,7 @@
  * Cliente API para comunicación con el backend
  */
 
-const API_BASE_URL = '../../backend/api';
+const API_BASE_URL = '/backend/api';
 
 const ApiClient = {
     /**

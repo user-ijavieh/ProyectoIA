@@ -1,0 +1,94 @@
+services:
+  # Base de datos MySQL
+  db:
+    image: mysql:8.0
+    container_name: gastroia_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_password}
+      MYSQL_DATABASE: ${DB_NAME:-restaurante_db}
+      MYSQL_USER: ${DB_USER:-restaurante_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-restaurante_pass}
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    volumes:
+      - ./database/schemas/restaurante_db.sql:/docker-entrypoint-initdb.d/init.sql
+      - db_data:/var/lib/mysql
+    networks:
+      - gastroia_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-root_password}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Servidor PHP + Apache (Frontend + API)
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    container_name: gastroia_web
+    restart: always
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    volumes:
+      - ./frontend:/var/www/html/frontend
+      - ./backend/api:/var/www/html/backend/api
+      - ./backend/config:/var/www/html/backend/config
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - gastroia_network
+    environment:
+      DB_HOST: db
+      DB_USER: ${DB_USER:-restaurante_user}
+      DB_PASSWORD: ${DB_PASSWORD:-restaurante_pass}
+      DB_NAME: ${DB_NAME:-restaurante_db}
+
+  # Aplicación Python (Chatbot IA)
+  chatbot:
+    build:
+      context: .
+      dockerfile: Dockerfile.chatbot
+    container_name: gastroia_chatbot
+    restart: always
+    ports:
+      - "${CHATBOT_PORT:-7860}:7860"
+    volumes:
+      - ./backend/chatbot:/app
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - gastroia_network
+    environment:
+      DB_HOST: db
+      DB_USER: ${DB_USER:-restaurante_user}
+      DB_PASSWORD: ${DB_PASSWORD:-restaurante_pass}
+      DB_NAME: ${DB_NAME:-restaurante_db}
+      HF_HOME: /app/.cache
+      TRANSFORMERS_CACHE: /app/.cache
+
+  # Adminer (Gestor de base de datos)
+  adminer:
+    image: adminer:latest
+    container_name: gastroia_adminer
+    restart: always
+    ports:
+      - "${ADMINER_PORT:-8081}:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - gastroia_network
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+
+networks:
+  gastroia_network:
+    driver: bridge
+
+volumes:
+  db_data:
+    driver: local

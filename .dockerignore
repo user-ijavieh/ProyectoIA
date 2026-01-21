@@ -4,11 +4,10 @@ __pycache__/
 *$py.class
 *.so
 .Python
-env/
-venv/
 *.egg-info/
 dist/
 build/
+.gradio/
 
 # IDEs
 .vscode/
@@ -21,6 +20,11 @@ build/
 .DS_Store
 Thumbs.db
 
+# Git
+.git/
+.gitignore
+.gitattributes
+
 # Logs
 *.log
 
@@ -28,17 +32,13 @@ Thumbs.db
 .env
 .env.local
 
+# Documentation
+*.md
+docs/
+
+# Tests
+tests/
+
 # Docker
-.docker/
-docker-compose.override.yml
-
-# Hugging Face cache
-backend/chatbot/.cache/
-
-# Node modules (si se añade frontend con npm)
-node_modules/
-
-# Temporal
-*.tmp
-*.bak
-*.orig
+docker-compose.yml
+Dockerfile*

@@ -1,0 +1,44 @@
+FROM php:8.2-apache
+
+# Instalar extensiones de PHP necesarias
+RUN docker-php-ext-install mysqli pdo pdo_mysql
+
+# Habilitar mod_rewrite de Apache
+RUN a2enmod rewrite
+
+# Configurar DocumentRoot
+ENV APACHE_DOCUMENT_ROOT /var/www/html/frontend/public
+
+# Crear configuración de aliases con rutas absolutas
+RUN printf 'Alias /assets /var/www/html/frontend/assets\n\
+Alias /backend/api /var/www/html/backend/api\n\
+\n\
+<Directory /var/www/html/frontend/assets>\n\
+    Options Indexes FollowSymLinks\n\
+    AllowOverride None\n\
+    Require all granted\n\
+</Directory>\n\
+\n\
+<Directory /var/www/html/backend/api>\n\
+    Options Indexes FollowSymLinks\n\
+    AllowOverride All\n\
+    Require all granted\n\
+    <FilesMatch \\.php$>\n\
+        SetHandler application/x-httpd-php\n\
+    </FilesMatch>\n\
+</Directory>\n' > /etc/apache2/conf-available/aliases.conf && \
+    a2enconf aliases
+
+# Actualizar la configuración de Apache (solo para 000-default.conf, no tocar aliases.conf)
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
+RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf
+
+# Configurar permisos
+WORKDIR /var/www/html
+RUN chown -R www-data:www-data /var/www/html
+
+# Exponer puerto 80
+EXPOSE 80
+
+# Comando por defecto
+CMD ["apache2-foreground"]

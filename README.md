@@ -37,7 +37,39 @@ ProyectoIA/
 └── docs/                       # Documentación
 ```
 
-## 🚀 Instalación
+## 🚀 Instalación con Docker (Recomendado)
+
+### Requisitos
+- Docker Desktop
+- Docker Compose
+
+### Inicio rápido
+```bash
+docker-compose up -d
+```
+
+### 🌐 Acceso a los servicios
+
+Una vez iniciado Docker, podrás acceder a:
+
+| Servicio | URL | Descripción |
+|----------|-----|-------------|
+| 📊 **Tablero de Pedidos** | [http://localhost:8080](http://localhost:8080) | Kanban para gestión de pedidos |
+| 🤖 **Chatbot IA** | [http://localhost:7860](http://localhost:7860) | Interfaz de chatbot con IA |
+| 💾 **Adminer (BD)** | [http://localhost:8081](http://localhost:8081) | Administrador de base de datos |
+
+#### Credenciales de Adminer:
+- **Servidor**: `db`
+- **Usuario**: `restaurante_user`
+- **Contraseña**: `restaurante_pass`
+- **Base de datos**: `restaurante_db`
+
+### Detener servicios
+```bash
+docker-compose down
+```
+
+## 🛠️ Instalación manual (sin Docker)
 
 ### Requisitos
 
@@ -45,7 +77,6 @@ ProyectoIA/
 - MySQL/MariaDB
 - Python 3.8+
 - Tesseract OCR
-- OpenAI API Key (para GPT)
 
 ### Configuración
 
@@ -61,7 +92,8 @@ ProyectoIA/
    ```
 
 3. **Variables de entorno**
-   - Configura tu API key de OpenAI en las variables de entorno o en `ia_engine.py`
+   - Copia `.env.example` a `.env`
+   - Configura las credenciales de la base de datos
 
 4. **Servidor web**
    - Coloca el proyecto en tu servidor web (Apache/Nginx)
@@ -69,28 +101,36 @@ ProyectoIA/
 
 ## 🎯 Uso
 
-### Iniciar el chatbot
+### Con Docker
+Simplemente ejecuta `docker-compose up -d` y accede a las URLs indicadas arriba.
+
+### Sin Docker
+
+#### Iniciar el chatbot
 ```bash
 cd backend/chatbot
 python main.py
 ```
 El chatbot estará disponible en `http://localhost:7860`
 
-### Acceder al tablero
+#### Acceder al tablero
 Abre `frontend/public/index.html` en tu navegador o accede vía servidor web.
 
 ### API REST
-- **GET** `backend/api/api_pedidos.php` - Lista de pedidos activos
-- **GET** `backend/api/api_pedidos.php?mode=historial` - Pedidos archivados
-- **POST** `backend/api/api_pedidos.php` - Actualizar estado de pedido
+- **GET** `backend/api/pedidos.controller.php` - Lista de pedidos activos
+- **GET** `backend/api/pedidos.controller.php?mode=historial` - Pedidos archivados
+- **POST** `backend/api/pedidos.controller.php` - Crear pedido
+- **PUT** `backend/api/pedidos.controller.php` - Actualizar estado de pedido
 
 ## 🛠️ Tecnologías
 
-- **Frontend**: HTML5, CSS3, JavaScript (Vanilla)
-- **Backend API**: PHP, MySQL
-- **Backend IA**: Python, Gradio, OpenAI GPT
-- **OCR**: Tesseract
-- **Base de datos**: MySQL
+- **Frontend**: HTML5, CSS3, JavaScript (Vanilla ES6 Modules)
+- **Backend API**: PHP 8.2, MySQL 8.0
+- **Backend IA**: Python 3.11, Gradio, Hugging Face Transformers
+- **OCR**: EasyOCR, TrOCR (Microsoft)
+- **IA**: BART (Facebook), Zero-shot Classification
+- **Base de datos**: MySQL 8.0
+- **Contenedores**: Docker, Docker Compose
 
 ## 📝 Funcionalidades del Chatbot
 
