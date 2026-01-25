@@ -27,6 +27,18 @@ def obtener_menu_db():
             conexion.close()
     return []
 
+def obtener_menu_completo():
+    """Obtiene el menú completo con nombres y precios para mostrar al usuario."""
+    conexion = get_db_connection()
+    if conexion and conexion.is_connected():
+        try:
+            cursor = conexion.cursor(dictionary=True)
+            cursor.execute("SELECT nombre_producto, precio FROM menu WHERE disponible = 1 ORDER BY nombre_producto")
+            return cursor.fetchall()
+        finally: 
+            conexion.close()
+    return []
+
 def obtener_precio_producto(nombre):
     """Busca el precio de un producto específico en la tabla menu."""
     conexion = get_db_connection()

@@ -5,7 +5,7 @@ Sistema inteligente de gestión de pedidos para restaurantes con interfaz de cha
 ## 📋 Características
 
 - 🤖 **Chatbot con IA** - Procesamiento de pedidos en lenguaje natural
-- 📸 **OCR** - Reconocimiento de texto en imágenes para pedidos
+- 🧠 **Clasificador Entrenado** - Modelo sklearn para detectar intenciones
 - 📊 **Tablero Kanban** - Visualización del estado de pedidos en tiempo real
 - 📜 **Historial** - Registro completo de pedidos archivados
 - 🔄 **Actualizaciones en tiempo real** - Sin necesidad de recargar la página
@@ -23,21 +23,24 @@ ProyectoIA/
 │       └── js/                 # Scripts del cliente
 ├── backend/
 │   ├── api/                    # API REST en PHP
-│   │   ├── api_pedidos.php    # Endpoints de pedidos
-│   │   ├── check_db.php       # Verificación de BD
-│   │   └── fix_schema.php     # Mantenimiento de esquema
+│   │   ├── pedidos.controller.php  # Controlador de pedidos
+│   │   ├── pedidos.service.php     # Lógica de negocio
+│   │   └── pedidos.repository.php  # Acceso a BD
 │   ├── chatbot/                # Servicio Python IA
-│   │   ├── main.py            # Aplicación Gradio
-│   │   ├── ia_engine.py       # Motor de IA (GPT)
-│   │   ├── database.py        # Conexión a BD
-│   │   └── check_ocr.py       # Utilidades OCR
+│   │   ├── chatbot_ui.py       # Interfaz Gradio
+│   │   ├── trained_classifier.py # Clasificador entrenado
+│   │   ├── intent_classifier.py  # Clasificador por reglas
+│   │   ├── order_processor.py  # Procesador de pedidos (BART)
+│   │   ├── sentiment_analyzer.py # Análisis de sentimiento
+│   │   ├── db_repository.py    # Conexión a BD
+│   │   └── training_data/      # Datos de entrenamiento
 │   └── config/                 # Configuración
 ├── database/
 │   └── schemas/                # Esquemas SQL
 └── docs/                       # Documentación
 ```
 
-## 🚀 Instalación con Docker (Recomendado)
+## 🚀 Instalación con Docker
 
 ### Requisitos
 - Docker Desktop
@@ -76,7 +79,6 @@ docker-compose down
 - PHP 7.4+
 - MySQL/MariaDB
 - Python 3.8+
-- Tesseract OCR
 
 ### Configuración
 

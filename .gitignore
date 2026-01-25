@@ -35,6 +35,20 @@ docker-compose.override.yml
 # Hugging Face cache
 backend/chatbot/.cache/
 
+# Modelos entrenados (archivos grandes)
+*.pkl
+*.joblib
+*.h5
+*.pt
+*.pth
+*.onnx
+
+# Datasets de entrenamiento (opcional - descomenta si quieres incluirlos)
+# backend/chatbot/training_data/*.json
+
+# Modelo entrenado específico
+backend/chatbot/training_data/intent_classifier_model.pkl
+
 # Node modules (si se añade frontend con npm)
 node_modules/
 
@@ -42,3 +56,17 @@ node_modules/
 *.tmp
 *.bak
 *.orig
+
+# Jupyter Notebooks checkpoints
+.ipynb_checkpoints/
+
+# MySQL data (si se monta localmente)
+mysql_data/
+db_data/
+
+# Coverage reports
+htmlcov/
+.coverage
+
+# Pytest cache
+.pytest_cache/
